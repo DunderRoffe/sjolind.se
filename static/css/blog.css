@@ -1,3 +1,32 @@
 .blog {
-  background-color: #f00;
+  width: 800px;
+}
+
+.blogContainer {
+  margin:auto;
+}
+
+.blogHeading {
+  background-color: #efe;
+}
+
+.blogPosts{
+  background-color: #fee;
+}
+
+.blogPost {
+  width: 750px;
+  margin: auto;
+}
+
+.blogPostContainer {
+  padding-top: 10px;
+}
+
+.blogPostHeading {
+  background-color: #eef;
+}
+
+.blogPostContent {
+  background-color: #dde;
 }

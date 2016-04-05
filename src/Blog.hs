@@ -58,13 +58,15 @@ getBlog :: Query Blog Blog
 getBlog = ask
 
 formatBlogAsHTML :: Blog -> Markup
-formatBlogAsHTML (Blog h bps) = do 
+formatBlogAsHTML (Blog h bps) =
+  div ! class_ "blog blogContainer" $ do
     div ! class_ "blog blogHeading" $ text h
     div ! class_ "blog blogPosts" $ mconcat (map formatBlogPostAsHTML bps)
 
 formatBlogPostAsHTML :: BlogPost -> Markup
-formatBlogPostAsHTML (BlogPost h d c) = do
-  div ! class_ "blogPost blogPostHeading" $ text (mconcat [h, " ", d])
-  div ! class_ "blogPost blogPostContent" $ text c
+formatBlogPostAsHTML (BlogPost h d c) =
+  div ! class_ "blogPost blogPostContainer" $ do
+    div ! class_ "blogPost blogPostHeading" $ text (mconcat [h, " ", d])
+    div ! class_ "blogPost blogPostContent" $ text c
 
 $(makeAcidic ''Blog ['addBlogPost, 'getBlog])
