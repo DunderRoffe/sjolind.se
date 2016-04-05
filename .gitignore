@@ -1,0 +1,6 @@
+db/
+dist/
+secretFile
+*.swo
+*.swp
+*.o
