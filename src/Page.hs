@@ -12,18 +12,16 @@ import Text.Blaze.Internal as B
 import Text.Blaze.Html5
 import Text.Blaze.Html5.Attributes hiding (title, form, label)
 
-htmlPage :: Html -> Bool -> Html
-htmlPage blog authenticated =
+renderCore :: Html -> Bool -> Html
+renderCore content authenticated =
           docTypeHtml $ do
             head $ do
               title "sjolind.se"
+              link ! href "https://github.com/dunderroffe" ! rel "me"
+              link ! href "https://github.com/dunderroffe" ! rel "me"
               link ! rel "stylesheet" ! type_ "text/css" ! href "css/blog.css"
             body $ do
-              div ! class_ "about" $ "My name is Viktor Sjölind"
-              ul $ do
-                li $ a ! href "https://github.com/dunderroffe" ! rel "me" $ "GitHub"
-                li $ a ! href "https://bitbucket.org/roffe" ! rel "me" $ "BitBucket"
-              blog
+              content
               if authenticated
                  then newBlogPost
                  else signInForm
