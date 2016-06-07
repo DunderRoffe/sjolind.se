@@ -5,6 +5,8 @@ import Prelude hiding (head, div, id)
 import Data.Monoid (mconcat)
 import Control.Monad (when)
 
+import Data.Text.Lazy (toStrict)
+
 import Constants
 
 import Text.Blaze
@@ -16,8 +18,8 @@ renderCore :: Html -> Bool -> Html
 renderCore content authenticated =
           docTypeHtml $ do
             head $ do
-              title "sjolind.se"
-              link ! href "https://github.com/dunderroffe" ! rel "me"
+              title $ text $ toStrict serverUri
+              mapM_ (\url -> link ! href (textValue url) ! rel "me") melinks
               link ! rel "stylesheet" ! type_ "text/css" ! href "/css/blog.css"
             body $ do
               content
