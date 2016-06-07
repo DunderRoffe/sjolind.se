@@ -6,7 +6,7 @@ module AcidDatabase where
 
 import Data.Acid
 import Data.Acid.Advanced
-
+import Data.Text (Text)
 import Data.Serialize.Get (runGet)
 import Data.Typeable
 import Data.Maybe
@@ -29,13 +29,31 @@ $(deriveSafeCopy 0 'base ''Post)
 $(deriveSafeCopy 0 'base ''Comment)
 
 updateProject :: Project -> Update Database ()
-updateProject p@(Project name _ _ _) = do
+updateProject p@(Project name _ _ _ _) = do
   (Database m) <- get
   put (Database (Map.insert name p m))
 
-getProject :: ProjectName -> Query Database (Maybe Project)
+getProject :: Text -> Query Database (Maybe Project)
 getProject k = do
   (Database m) <- ask
   return (Map.lookup k m)
 
-$(makeAcidic ''Database ['updateProject, 'getProject])
+updatePost :: Text -> Post -> Update Database ()
+updatePost projectName post = do
+  (Database m) <- get
+  let mproj = Map.lookup projectName m
+  case mproj of
+    Nothing   -> return ()
+    Just proj -> do
+      let postsMap' = Map.insert (postHeading post) post (projectPostsMap proj)
+          proj'     = proj { projectPostsMap = postsMap'}
+      put (Database (Map.insert projectName proj' m))
+
+getPost :: Text -> Text -> Query Database (Maybe Post)
+getPost projectName postHeading = do
+  (Database m) <- ask
+  case Map.lookup projectName m of
+    Nothing -> return Nothing
+    Just project -> return $ Map.lookup postHeading (projectPostsMap project)
+
+$(makeAcidic ''Database ['updateProject, 'getProject, 'updatePost, 'getPost])

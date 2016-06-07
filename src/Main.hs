@@ -35,11 +35,16 @@ main = do
   S.scotty 3000 $ do
     S.middleware $ staticPolicy (noDots >-> addBase "static")
 
-    S.get "" $ viewProj db "Main"
+    S.get "" $ viewProj db "Main" ""
 
     S.get "/:project/" $ do
           projName <- S.param "project"
-          viewProj db projName
+          viewProj db projName ""
+
+    S.get "/:project/:post" $ do
+          projName    <- S.param "project"
+          postHeading <- S.param "post"
+          viewProj db projName postHeading
 
     S.get "/auth" $
           flip S.rescue (\_ -> S.status badRequest400) $ do
@@ -71,14 +76,14 @@ main = do
             else
               S.raise "unathorized"
    -}
-
-viewProj :: AcidState Database -> ProjectName -> S.ActionM ()
-viewProj db projName = do
+viewProj :: AcidState Database -> T.Text -> T.Text -> S.ActionM ()
+viewProj db projName postHeading = do
   mproj <- liftIO $ query db (GetProject projName)
+  mpost <- liftIO $ query db (GetPost projName postHeading)
   case mproj of
-    Nothing   -> undefined
+    Nothing   -> S.redirect serverUri
     Just proj -> do
-      let renderedProject = renderProject proj
+      let renderedProject = renderProject mpost proj
       cookieCode <- liftM (fromMaybe "") $ SC.getCookie cookieName
       let authenticated = cookieCode /= ""
       S.html $ renderHtml $ renderCore renderedProject authenticated

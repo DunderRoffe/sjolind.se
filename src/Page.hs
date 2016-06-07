@@ -18,8 +18,7 @@ renderCore content authenticated =
             head $ do
               title "sjolind.se"
               link ! href "https://github.com/dunderroffe" ! rel "me"
-              link ! href "https://github.com/dunderroffe" ! rel "me"
-              link ! rel "stylesheet" ! type_ "text/css" ! href "css/blog.css"
+              link ! rel "stylesheet" ! type_ "text/css" ! href "/css/blog.css"
             body $ do
               content
               if authenticated
