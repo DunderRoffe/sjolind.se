@@ -21,6 +21,7 @@ import Control.Monad (liftM, when)
 import Control.Monad.IO.Class (liftIO)
 
 import Network.Wai.Middleware.Static
+import Network.Wai.Parse
 import Network.HTTP.Types
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
@@ -71,27 +72,58 @@ main = do
             S.redirect serverUri 
 
 
-    -- REWRITE
-    {-
-    S.post "" $ flip S.rescue (\_ -> S.status unauthorized401) $ do
-          cookieCode <- liftM (fromMaybe "") $ SC.getCookie cookieName
-          authenticated <- liftIO $ checkAuth $ LT.fromStrict cookieCode
+    S.post "/:project/post" $ flip S.rescue (\_ -> S.status unauthorized401) $ do
+          authenticated <- isAuthenticated
           if authenticated
             then do
-              contentType <- S.header "Content-Type"
-              bp <- case contentType of
-                (Just "application/json") -> undefined -- S.jsonData
-                (Just "application/x-www-form-urlencoded") -> do
-                  heading <- S.param "heading"
-                  date    <- S.param "date"
-                  content <- S.param "content"
-                  -- return (BlogPost heading date content)
-                  undefined
-              -- liftIO $ update blog (AddBlogPost bp)
-              S.redirect serverUri
+              projectName <- S.param "project"
+              mproj <- liftIO $ query db (GetProject projectName)
+              case mproj of
+                Nothing      -> S.status badRequest400
+                Just project -> do
+                  contentType <- S.header "Content-Type"
+                  bp <- case contentType of
+                    (Just "application/json") -> undefined -- S.jsonData
+                    (Just "application/x-www-form-urlencoded") -> do
+                      authorName   <- S.param "author-name"
+                      authorImage  <- S.param "author-image"
+                      authorUri    <- S.param "author-uri"
+                      heading <- S.param "heading"
+                      date    <- S.param "date"
+                      content <- S.param "content"
+                      let author    = Author authorName authorImage authorUri
+                          post      = Post author heading date content []
+                          postsMap' = Map.insert heading post (projectPostsMap project)
+                          project'  = project {projectPostsMap = postsMap'}
+                      liftIO $ update db (UpdateProject project')
+                  S.redirect serverUri
             else
               S.raise "unathorized"
-   -}
+
+    S.post "/:project/file/" $ flip S.rescue (\_ -> S.status unauthorized401) $ do
+          authenticated <- isAuthenticated
+          if authenticated
+            then do
+              projectName <- S.param "project"
+              mproj <- liftIO $ query db (GetProject projectName)
+              case mproj of
+                Nothing      -> S.status badRequest400
+                Just project -> do
+                  ((filename, fileinfo): _)   <- S.files
+                  let filesMap' = Map.insert (LT.toStrict filename)
+                                   (File (LT.toStrict filename) (fileContent fileinfo))
+                                   (projectFilesMap project) 
+                      project'  = project {projectFilesMap = filesMap'}
+                  liftIO $ update db (UpdateProject project')
+                  S.redirect serverUri
+            else
+              S.raise "unathorized"
+              
+isAuthenticated :: S.ActionM Bool
+isAuthenticated = do
+  cookieCode <- liftM (fromMaybe "") $ SC.getCookie cookieName
+  authenticated <- liftIO $ checkAuth $ LT.fromStrict cookieCode
+  return True -- authenticated
 
 viewProj :: AcidState Database -> T.Text -> T.Text -> S.ActionM ()
 viewProj db projName postHeading = do
