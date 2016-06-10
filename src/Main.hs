@@ -76,6 +76,7 @@ main = do
             else
               S.raise "unathorized"
    -}
+
 viewProj :: AcidState Database -> T.Text -> T.Text -> S.ActionM ()
 viewProj db projName postHeading = do
   mproj <- liftIO $ query db (GetProject projName)

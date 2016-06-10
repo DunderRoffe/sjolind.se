@@ -27,6 +27,7 @@ $(deriveSafeCopy 0 'base ''Project)
 $(deriveSafeCopy 0 'base ''File)
 $(deriveSafeCopy 0 'base ''Post)
 $(deriveSafeCopy 0 'base ''Comment)
+$(deriveSafeCopy 0 'base ''Author)
 
 updateProject :: Project -> Update Database ()
 updateProject p@(Project name _ _ _ _) = do

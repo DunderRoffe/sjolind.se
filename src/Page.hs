@@ -20,9 +20,9 @@ renderCore content authenticated =
             head $ do
               title $ text $ toStrict serverUri
               mapM_ (\url -> link ! href (textValue url) ! rel "me") melinks
-              link ! rel "stylesheet" ! type_ "text/css" ! href "/css/blog.css"
+              link ! rel "stylesheet" ! type_ "text/css" ! href "/css/default.css"
             body $ do
-              content
+              div ! class_ "page-content" $ content
               if authenticated
                  then newBlogPost
                  else signInForm
