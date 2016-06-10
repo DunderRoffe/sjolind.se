@@ -28,6 +28,8 @@ import Network.HTTP.Client.TLS
 import Text.Blaze
 import Text.Blaze.Html.Renderer.Text (renderHtml)
 
+import qualified Data.Map as Map
+
 cookieName = "sjolind.se"
 main :: IO()
 main = do
@@ -45,6 +47,20 @@ main = do
           projName    <- S.param "project"
           postHeading <- S.param "post"
           viewProj db projName postHeading
+
+    S.get "/:project/file/:filename" $ do
+          projName    <- S.param "project"
+          filename    <- S.param "filename"
+          mproj <- liftIO $ query db (GetProject projName)
+          case mproj of
+            Nothing      -> S.status badRequest400
+            Just project -> do
+              let fm = projectFilesMap project
+              case Map.lookup filename fm of
+                Nothing                -> S.status badRequest400
+                Just (File _ fileData) -> do
+                  S.setHeader "Content-Disposition" (LT.fromStrict filename)
+                  S.raw fileData
 
     S.get "/auth" $
           flip S.rescue (\_ -> S.status badRequest400) $ do
