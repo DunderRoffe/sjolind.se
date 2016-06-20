@@ -1,0 +1,25 @@
+body {
+  margin: auto;
+  max-width: 1000px;
+}
+
+.page-content {
+}
+
+.project {
+  width: 100%;
+}
+
+.project-content {
+  background-color: #EFEFEA;
+  width: 800px;
+  border-radius: 10px;
+}
+.project-posts {
+  background-color: #EFEFEA;
+  width: 150px;
+  border-radius: 10px;
+}
+.project-top {
+  background-color: #EFEFFF;
+}
