@@ -25,7 +25,7 @@ renderPost (Post author heading date content comments) =
       time ! class_ "dt-published" ! datetime (textValue date)$
         text date
     p ! class_ "e-content"$ markdown def (fromStrict content)
-    when (not (null comments)) $ do
+    unless (null comments) $
       div ! class_ "comments" $ mapM_ renderComment comments
 
 renderComment :: Comment -> Html
@@ -36,17 +36,17 @@ renderComment (Comment author date comment subcomments) =
       time ! class_ "dt-published" ! datetime (textValue date)$
         text date
     p ! class_ "e-content" $ text comment
-    when (not (null subcomments)) $ do
+    unless (null subcomments) $
       div ! class_ "comments" $ mapM_ renderComment subcomments
 
 renderAuthor :: Author -> Html
-renderAuthor author = do
+renderAuthor author =
   h2 ! class_ "h-card" $ do
-    img ! class_ "u-photo" ! href (textValue (authorImage author)) ! alt "<author image>"
+    img ! class_ "u-photo" ! src (textValue (authorImage author)) ! alt "<author image>"
     span  ! class_ "p-name u-uri"  ! href (textValue (authorUri author)) $ text (authorName author)
 
 newPostForm :: Post -> Html
-newPostForm post = do
+newPostForm post =
   form ! action (textValue (toStrict serverUri)) ! method "post" $ do
     let author = postAuthor post
     div $ do
