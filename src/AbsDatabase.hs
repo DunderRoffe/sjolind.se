@@ -2,9 +2,10 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module AbsDatabase where
 
-import Constants
+import qualified Constants as C
 import Data.Typeable
 import Data.Text (Text)
+import Data.Text.Lazy (toStrict)
 import Data.Map.Strict
 import Text.Blaze
 import Data.ByteString (ByteString)
@@ -15,7 +16,7 @@ newDB = Database projMap
   where projMap  = insert "Main" (Project "Main" "## Hello World" postsMap filesMap []) empty
         filesMap = empty
         postsMap = insert "Head" (Post author "Head" "Date" "Text" []) empty
-        author   = Author authorName "/Main/file/author.jpeg" serverUri
+        author   = Author C.authorName "/Main/file/author.jpeg" (toStrict C.serverUri)
 
 data Project = Project {
     projectName        :: Text,

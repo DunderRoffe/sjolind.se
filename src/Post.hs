@@ -2,7 +2,7 @@
 module Post where
 
 import AbsDatabase
-import Constants
+import Constants hiding (authorName)
 
 import Prelude hiding (div, span, id)
 

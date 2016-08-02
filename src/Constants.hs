@@ -4,6 +4,7 @@ module Constants where
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text as T
 
+authorName :: T.Text
 authorName = "Roffe"
 
 serverUri :: LT.Text
