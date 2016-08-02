@@ -21,11 +21,21 @@ renderCore content authenticated =
               title $ text $ toStrict serverUri
               mapM_ (\url -> link ! href (textValue url) ! rel "me") melinks
               link ! rel "stylesheet" ! type_ "text/css" ! href "/css/default.css"
+              link ! rel "stylesheet" ! type_ "text/css" ! href "/js/styles/default.css"
+              script ! src "/js/highlight.pack.js" $ return ()
+              script $ text "hljs.initHighlightingOnLoad();"
             body $ do
               div ! class_ "page-content" $ content
               if authenticated
-                 then newBlogPost
+                 then adminBar
                  else signInForm
+
+adminBar :: Html
+adminBar = do
+  form ! action (textValue (toStrict serverUri)) ! method "post" $
+    input ! type_ "submit" ! value "New"
+  form ! action (textValue (toStrict serverUri)) ! method "post" $
+    input ! type_ "submit" ! value "Edit"
 
 newBlogPost :: Html
 newBlogPost =
@@ -43,7 +53,7 @@ newBlogPost =
               textarea ! id "content" ! name "content"
                     ! placeholder "BlogPost text..." $ return ()
 
-            div $ do
+            div $
               input ! type_ "submit"
 
 signInForm :: Html

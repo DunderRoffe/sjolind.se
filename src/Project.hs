@@ -21,7 +21,7 @@ renderProject mpost (Project name firstPage posts files subprojects) =
   table ! class_ "project" $ do
     tr $
       td ! colspan "2" ! class_ "project-top" $
-        h1 $ text $ name
+        h1 text name
     tr $ do
       td ! class_ "project-content" $
         case mpost of

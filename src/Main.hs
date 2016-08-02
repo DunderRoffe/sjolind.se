@@ -3,7 +3,10 @@ module Main where
 
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
-import qualified Data.Text.Lazy.Encoding as LTE (encodeUtf8)
+import qualified Data.Text.Lazy.Encoding as LTE (encodeUtf8, decodeUtf8)
+import qualified Data.Text.Encoding as TE (encodeUtf8, decodeUtf8)
+import qualified Data.ByteString.Lazy as LBS (fromStrict, toStrict)
+
 import qualified Web.Scotty as S
 import qualified Web.Scotty.Cookie as SC
 import Data.Monoid (mconcat, mempty)
@@ -21,12 +24,13 @@ import Control.Monad (liftM, when)
 import Control.Monad.IO.Class (liftIO)
 
 import Network.Wai.Middleware.Static
+import Network.Wai.Parse
 import Network.HTTP.Types
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
 
 import Text.Blaze
-import Text.Blaze.Html.Renderer.Text (renderHtml)
+import Text.Blaze.Html.Renderer.Pretty (renderHtml)
 
 import qualified Data.Map as Map
 
@@ -59,8 +63,8 @@ main = do
               case Map.lookup filename fm of
                 Nothing                -> S.status badRequest400
                 Just (File _ fileData) -> do
-                  S.setHeader "Content-Disposition" (LT.fromStrict filename)
-                  S.raw fileData
+                  S.setHeader "Content-Disposition" $ LT.fromStrict $TE.decodeUtf8 filename
+                  S.raw $ LBS.fromStrict fileData
 
     S.get "/auth" $
           flip S.rescue (\_ -> S.status badRequest400) $ do
@@ -68,30 +72,65 @@ main = do
             authenticated <- liftIO $ checkAuth $ LT.fromStrict code
             when authenticated $
               SC.setSimpleCookie cookieName code
-            S.redirect serverUri 
+            S.redirect serverUri
 
 
-    -- REWRITE
-    {-
-    S.post "" $ flip S.rescue (\_ -> S.status unauthorized401) $ do
-          cookieCode <- liftM (fromMaybe "") $ SC.getCookie cookieName
-          authenticated <- liftIO $ checkAuth $ LT.fromStrict cookieCode
+    S.post "/:project/post" $ do
+          authenticated <- isAuthenticated
           if authenticated
             then do
-              contentType <- S.header "Content-Type"
-              bp <- case contentType of
-                (Just "application/json") -> undefined -- S.jsonData
-                (Just "application/x-www-form-urlencoded") -> do
-                  heading <- S.param "heading"
-                  date    <- S.param "date"
-                  content <- S.param "content"
-                  -- return (BlogPost heading date content)
-                  undefined
-              -- liftIO $ update blog (AddBlogPost bp)
+              projectName    <- S.param "project"
+              (Just project) <- liftIO $ query db (GetProject projectName)
+              contentType    <- S.header "Content-Type"
+              authorName     <- S.param "author-name"
+              authorImage    <- S.param "author-image"
+              authorUri      <- S.param "author-uri"
+              heading        <- S.param "heading"
+              date           <- S.param "date"
+              content        <- S.param "content"
+
+              let author    = Author authorName authorImage authorUri
+                  post      = Post author heading date content []
+                  postsMap' = Map.insert heading post (projectPostsMap project)
+                  project'  = project {projectPostsMap = postsMap'}
+
+              liftIO $ update db (UpdateProject project')
               S.redirect serverUri
+
+            `S.rescue` (\msg -> do
+              S.status badRequest400
+              S.text msg)
+
             else
-              S.raise "unathorized"
-   -}
+              S.status unauthorized401
+
+    S.post "/:project/file/" $ do
+          authenticated <- isAuthenticated
+          if authenticated
+            then do
+              projectName        <- S.param "project"
+              (Just project)     <- liftIO $ query db (GetProject projectName)
+              ((_, fileinfo): _) <- S.files
+
+              let filesMap' = Map.insert (fileName fileinfo) file (projectFilesMap project)
+                  file      = File (fileName fileinfo) (LBS.toStrict (fileContent fileinfo))
+                  project'  = project {projectFilesMap = filesMap'}
+
+              liftIO $ update db (UpdateProject project')
+              liftIO $ print $ mconcat ["file ", fileName fileinfo, " added"]
+              S.redirect serverUri
+
+            `S.rescue` (\msg -> do
+              S.status badRequest400
+              S.text msg)
+            else
+              S.status unauthorized401
+
+isAuthenticated :: S.ActionM Bool
+isAuthenticated = do
+  cookieCode <- liftM (fromMaybe "") $ SC.getCookie cookieName
+  authenticated <- liftIO $ checkAuth $ LT.fromStrict cookieCode
+  return True -- authenticated
 
 viewProj :: AcidState Database -> T.Text -> T.Text -> S.ActionM ()
 viewProj db projName postHeading = do
@@ -103,7 +142,7 @@ viewProj db projName postHeading = do
       let renderedProject = renderProject mpost proj
       cookieCode <- liftM (fromMaybe "") $ SC.getCookie cookieName
       let authenticated = cookieCode /= ""
-      S.html $ renderHtml $ renderCore renderedProject authenticated
+      S.html $ LT.pack $ renderHtml $ renderCore renderedProject authenticated
 
 checkAuth :: LT.Text -> IO Bool
 checkAuth ""   = return False
