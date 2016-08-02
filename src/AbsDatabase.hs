@@ -20,8 +20,8 @@ newDB = Database projMap
 data Project = Project {
     projectName        :: Text,
     projectAboutpage   :: Text,
-    projectPostsMap    :: (Map Text Post),
-    projectFilesMap    :: (Map ByteString File),
+    projectPostsMap    :: Map Text Post,
+    projectFilesMap    :: Map ByteString File,
     projectSubProjects :: [Text]
   } deriving (Typeable)
 

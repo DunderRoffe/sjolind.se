@@ -32,9 +32,9 @@ renderCore content authenticated =
 
 adminBar :: Html
 adminBar = do
-  form ! action (textValue (toStrict serverUri)) ! method "post" $ do
+  form ! action (textValue (toStrict serverUri)) ! method "post" $
     input ! type_ "submit" ! value "New"
-  form ! action (textValue (toStrict serverUri)) ! method "post" $ do
+  form ! action (textValue (toStrict serverUri)) ! method "post" $
     input ! type_ "submit" ! value "Edit"
 
 newBlogPost :: Html
@@ -53,7 +53,7 @@ newBlogPost =
               textarea ! id "content" ! name "content"
                     ! placeholder "BlogPost text..." $ return ()
 
-            div $ do
+            div $
               input ! type_ "submit"
 
 signInForm :: Html

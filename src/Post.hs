@@ -67,9 +67,9 @@ newPostForm post =
     div $ do
       label ! for "date" $ text "Date"
       input ! id  "date" ! name "date" ! value (textValue (postDate post)) ! type_ "date"
-    div $ do
+    div $
       pre $ code ! class_ "markdown" $
         textarea ! id "content" ! name "content" $ text $ postContent post
 
-    div $ do
+    div $
       input ! type_ "submit"
