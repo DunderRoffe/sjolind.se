@@ -22,7 +22,7 @@ executable sjolind-se
         scotty-cookie,
         wai-middleware-static,
         wai-extra,
-        acid-state,
+        acid-state>=0.14,
         text,
         lens,
         cereal,
@@ -37,7 +37,7 @@ executable sjolind-se
         containers,
         markdown,
         data-default,
-        bytestring
+        bytestring>=0.10.6
 
 test-suite quick
     type:                exitcode-stdio-1.0
