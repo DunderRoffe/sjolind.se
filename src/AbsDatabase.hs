@@ -10,7 +10,7 @@ import Data.Map.Strict
 import Text.Blaze
 import Data.ByteString (ByteString)
 
-data Database = Database (Map Text Project)
+data Database = EmptyDatabase | Database (Map Text Project)
 newDB :: Database
 newDB = Database projMap
   where projMap  = insert "Main" (Project "Main" "## Hello World" postsMap filesMap []) empty

@@ -12,6 +12,7 @@ import qualified Web.Scotty.Cookie as SC
 import Data.Monoid (mconcat, mempty)
 import Data.Acid
 import Page
+import StartupPage
 import Constants
 import AbsDatabase
 import AcidDatabase
@@ -37,10 +38,20 @@ import qualified Data.Map as Map
 cookieName = "sjolind.se"
 main :: IO()
 main = do
-  db <- openLocalStateFrom "db/" newDB
+  db <- openLocalStateFrom "db/" EmptyDatabase
+  e <- liftIO $ query db IsEmpty
   S.scotty 3000 $ do
     S.middleware $ staticPolicy (noDots >-> addBase "static")
+    if e then startupPage
+         else runtimePage db
 
+startupPage :: S.ScottyM ()
+startupPage = do
+    S.get "" $
+          S.html $ LT.pack $ renderHtml renderStartupPage
+
+runtimePage :: AcidState Database -> S.ScottyM ()
+runtimePage db = do
     S.get "" $ viewProj db "Main" ""
 
     S.get "/:project/" $ do

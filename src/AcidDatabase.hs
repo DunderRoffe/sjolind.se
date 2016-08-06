@@ -34,6 +34,13 @@ updateProject p@(Project name _ _ _ _) = do
   (Database m) <- get
   put (Database (Map.insert name p m))
 
+isEmpty :: Query Database Bool
+isEmpty = do
+  db <- ask
+  case db of
+    EmptyDatabase -> return True
+    _             -> return False
+
 getProject :: Text -> Query Database (Maybe Project)
 getProject k = do
   (Database m) <- ask
@@ -57,4 +64,4 @@ getPost projectName postHeading = do
     Nothing -> return Nothing
     Just project -> return $ Map.lookup postHeading (projectPostsMap project)
 
-$(makeAcidic ''Database ['updateProject, 'getProject, 'updatePost, 'getPost])
+$(makeAcidic ''Database ['updateProject, 'getProject, 'updatePost, 'getPost, 'isEmpty])
