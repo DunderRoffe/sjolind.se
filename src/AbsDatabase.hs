@@ -10,13 +10,9 @@ import Data.Map.Strict
 import Text.Blaze
 import Data.ByteString (ByteString)
 
-data Database = EmptyDatabase | Database (Map Text Project)
-newDB :: Database
-newDB = Database projMap
-  where projMap  = insert "Main" (Project "Main" "## Hello World" postsMap filesMap []) empty
-        filesMap = empty
-        postsMap = insert "Head" (Post author "Head" "Date" "Text" []) empty
-        author   = Author C.authorName "/Main/file/author.jpeg" (toStrict C.serverUri)
+data Database = Database Text (Map Text Project) Author
+emptyDb :: Database
+emptyDb = Database "" empty (Author "" "" "")
 
 data Project = Project {
     projectName        :: Text,

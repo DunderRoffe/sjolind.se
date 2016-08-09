@@ -5,7 +5,7 @@ import Prelude hiding (head, div, id)
 import Data.Monoid (mconcat)
 import Control.Monad (when)
 
-import Data.Text.Lazy (toStrict)
+import Data.Text.Lazy (Text, toStrict, pack)
 
 import Constants
 
@@ -13,22 +13,25 @@ import Text.Blaze
 import Text.Blaze.Internal as B
 import Text.Blaze.Html5
 import Text.Blaze.Html5.Attributes hiding (title, form, label)
+import Text.Blaze.Html.Renderer.Pretty (renderHtml)
 
-renderCore :: Html -> Bool -> Html
-renderCore content authenticated =
-          docTypeHtml $ do
-            head $ do
-              title $ text $ toStrict serverUri
-              mapM_ (\url -> link ! href (textValue url) ! rel "me") melinks
-              link ! rel "stylesheet" ! type_ "text/css" ! href "/css/default.css"
-              link ! rel "stylesheet" ! type_ "text/css" ! href "/js/styles/default.css"
-              script ! src "/js/highlight.pack.js" $ return ()
-              script $ text "hljs.initHighlightingOnLoad();"
-            body $ do
-              div ! class_ "page-content" $ content
-              if authenticated
-                 then adminBar
-                 else signInForm
+renderCore :: Html -> Text
+renderCore content = pack $ renderHtml $
+    docTypeHtml $ do
+      head $ do
+        title $ text $ toStrict serverUri
+        mapM_ (\url -> link ! href (textValue url) ! rel "me") melinks
+        link ! rel "stylesheet" ! type_ "text/css" ! href "/css/default.css"
+        link ! rel "stylesheet" ! type_ "text/css" ! href "/js/styles/default.css"
+        script ! src "/js/highlight.pack.js" $ return ()
+        script $ text "hljs.initHighlightingOnLoad();"
+      body $ div ! class_ "page-content" $ content
+
+renderAdminBar :: Bool -> Html
+renderAdminBar authenticated =
+    if authenticated
+       then adminBar
+       else signInForm
 
 adminBar :: Html
 adminBar = do

@@ -31,28 +31,46 @@ import Network.HTTP.Client
 import Network.HTTP.Client.TLS
 
 import Text.Blaze
-import Text.Blaze.Html.Renderer.Pretty (renderHtml)
 
 import qualified Data.Map as Map
 
 cookieName = "sjolind.se"
 main :: IO()
 main = do
-  db <- openLocalStateFrom "db/" EmptyDatabase
+  db <- openLocalStateFrom "db/" emptyDb
   e <- liftIO $ query db IsEmpty
+  print e
   S.scotty 3000 $ do
     S.middleware $ staticPolicy (noDots >-> addBase "static")
-    if e then startupPage
+    if e then startupPage db
          else runtimePage db
 
-startupPage :: S.ScottyM ()
-startupPage = do
+startupPage :: AcidState Database -> S.ScottyM ()
+startupPage db = do
     S.get "" $
-          S.html $ LT.pack $ renderHtml renderStartupPage
+          S.html $ renderCore renderStartupPage
+    S.post "" $ do
+          projectName     <- S.param "proj_name"
+          projectAbout    <- S.param "proj_about"
+
+          authorName      <- S.param "author_name"
+          authorUri       <- S.param "author_uri"
+
+          ((_, fileinfo): _) <- S.files
+
+          let filesMap  = Map.insert (fileName fileinfo) file Map.empty
+              file      = File (fileName fileinfo) (LBS.toStrict (fileContent fileinfo))
+              project   = Project projectName projectAbout Map.empty filesMap []
+              imgPath   = mconcat [projectName, "/file/", TE.decodeUtf8 (fileName fileinfo)]
+              author    = Author authorName imgPath authorUri
+
+          liftIO $ update db (UpdateProject project)
+          liftIO $ update db (UpdateAuthor author)
+          liftIO $ update db (UpdateMainProject projectName)
 
 runtimePage :: AcidState Database -> S.ScottyM ()
 runtimePage db = do
-    S.get "" $ viewProj db "Main" ""
+    S.get "" $ viewProj db "" ""
 
     S.get "/:project/" $ do
           projName <- S.param "project"
@@ -84,7 +102,6 @@ runtimePage db = do
             when authenticated $
               SC.setSimpleCookie cookieName code
             S.redirect serverUri
-
 
     S.post "/:project/post" $ do
           authenticated <- isAuthenticated
@@ -144,16 +161,21 @@ isAuthenticated = do
   return True -- authenticated
 
 viewProj :: AcidState Database -> T.Text -> T.Text -> S.ActionM ()
+viewProj db "" _ = do
+     (Project n _ _ _ _) <- liftIO $ query db GetMainProject
+     viewProj db n ""
+
 viewProj db projName postHeading = do
   mproj <- liftIO $ query db (GetProject projName)
   mpost <- liftIO $ query db (GetPost projName postHeading)
   case mproj of
     Nothing   -> S.redirect serverUri
     Just proj -> do
-      let renderedProject = renderProject mpost proj
       cookieCode <- liftM (fromMaybe "") $ SC.getCookie cookieName
       let authenticated = cookieCode /= ""
-      S.html $ LT.pack $ renderHtml $ renderCore renderedProject authenticated
+      S.html $ renderCore $ do
+        renderProject mpost proj
+        renderAdminBar authenticated
 
 checkAuth :: LT.Text -> IO Bool
 checkAuth ""   = return False
