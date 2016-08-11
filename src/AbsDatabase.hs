@@ -10,9 +10,11 @@ import Data.Map.Strict
 import Text.Blaze
 import Data.ByteString (ByteString)
 
-data Database = Database Text (Map Text Project) Author
+type Verification = Text
+
+data Database = Database Text (Map Text Project) Author [Verification]
 emptyDb :: Database
-emptyDb = Database "" empty (Author "" "" "")
+emptyDb = Database "" empty (Author "" "" "") []
 
 data Project = Project {
     projectName        :: Text,

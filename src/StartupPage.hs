@@ -35,7 +35,12 @@ authorForm = do
             input ! id "author_name" ! type_ "text"
                   ! name "author_name" ! placeholder "Mr Bigglesworth"
             br
-            input ! name "author_image" ! type_ "file"
+            label ! for "author_image" $ text "Picture"
+            input ! id "author_image" ! name "author_image" ! type_ "file"
+            br
+            label ! for "author_verify" $ text "Verification host"
+            input ! id "author_verify" ! name "author_verify"
+                  ! type_ "text" ! placeholder "https://github.com"
             br
             input ! type_ "hidden" ! name "author_uri"
                   ! value (textValue (toStrict serverUri))
