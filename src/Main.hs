@@ -194,7 +194,7 @@ checkAuth :: T.Text -> T.Text -> IO Bool
 checkAuth "" _  = return False
 checkAuth code uri = do
   manager <- newManager tlsManagerSettings
-  initialRequest <- parseUrl (T.unpack (mconcat ["https://indieauth.com/auth"
+  initialRequest <- parseRequest (T.unpack (mconcat ["https://indieauth.com/auth"
                                       , "?code=", code
                                       , "&client_id=", uri
                                       , "&redirect_uri=", uri, "/auth"]))
