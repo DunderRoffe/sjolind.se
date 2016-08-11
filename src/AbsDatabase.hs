@@ -2,7 +2,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module AbsDatabase where
 
-import qualified Constants as C
 import Data.Typeable
 import Data.Text (Text)
 import Data.Text.Lazy (toStrict)

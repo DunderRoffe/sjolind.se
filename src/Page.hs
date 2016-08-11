@@ -33,19 +33,19 @@ linkVerificationUri uri =
 renderAdminBar :: Bool -> Strict.Text -> Html
 renderAdminBar authenticated serverUri =
     if authenticated
-       then adminBar serverUri
+       then adminBar
        else signInForm serverUri
 
-adminBar :: Strict.Text -> Html
-adminBar serverUri = do
-  form ! action (textValue serverUri) ! method "post" $
+adminBar :: Html
+adminBar = do
+  form ! action "" ! method "post" $
     input ! type_ "submit" ! value "New"
-  form ! action (textValue serverUri) ! method "post" $
+  form ! action "" ! method "post" $
     input ! type_ "submit" ! value "Edit"
 
-newBlogPost :: Strict.Text -> Html
-newBlogPost serverUri =
-          form ! action (textValue serverUri) ! method "post" $ do
+newBlogPost :: Html
+newBlogPost =
+          form ! action "" ! method "post" $ do
             div $ do
               label ! for "heading" $ text "Heading"
               input ! id "heading " ! name "heading" ! value ""

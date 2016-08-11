@@ -7,8 +7,6 @@ import Control.Monad (when)
 
 import Data.Text.Lazy (toStrict)
 
-import Constants
-
 import Text.Blaze
 import Text.Blaze.Internal as B
 import Text.Blaze.Html5
@@ -16,12 +14,8 @@ import Text.Blaze.Html5.Attributes hiding (title, form, label)
 
 renderStartupPage :: Html
 renderStartupPage =
-          docTypeHtml $ do
-            head $ do
-              title $ text $ toStrict serverUri
-            body $ do
               form ! id "starupForm"
-                   ! action (B.lazyTextValue serverUri)
+                   ! action ""
                    ! method "post"
                    ! enctype "multipart/form-data" $
                    do
@@ -42,8 +36,9 @@ authorForm = do
             input ! id "author_verify" ! name "author_verify"
                   ! type_ "text" ! placeholder "https://github.com"
             br
-            input ! type_ "hidden" ! name "author_uri"
-                  ! value (textValue (toStrict serverUri))
+            label ! for "author_uri" $ text "Uri"
+            input ! name "author_uri"
+                  ! placeholder (textValue "mrbigglesworths.blag")
 
 mainpageForm :: Html
 mainpageForm = do

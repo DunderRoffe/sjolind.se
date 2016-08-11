@@ -20,7 +20,7 @@ import Post
 import Project
 
 import Data.Maybe (fromMaybe)
-import Control.Monad (liftM, when)
+import Control.Monad (liftM, when, unless)
 import Control.Monad.IO.Class (liftIO)
 
 import Network.Wai.Middleware.Static
@@ -37,28 +37,26 @@ cookieName = "sjolind.se"
 main :: IO()
 main = do
   db <- openLocalStateFrom "db/" emptyDb
-  e <- liftIO $ query db IsEmpty
-  print e
   S.scotty 3000 $ do
     S.middleware $ staticPolicy (noDots >-> addBase "static")
-    if e then startupPage db
-         else runtimePage db
 
-startupPage :: AcidState Database -> S.ScottyM ()
-startupPage db = do
     S.get "" $ do
+          e <- liftIO $ query db IsEmpty
+          unless e S.next
           vs <- liftIO $ query db GetVerificationUris
           (Author _ _ uri) <- liftIO $ query db GetAuthor
           S.html $ renderCore vs uri renderStartupPage
 
     S.post "" $ do
+          e <- liftIO $ query db IsEmpty
+          unless e S.next
           projectName     <- S.param "proj_name"
           projectAbout    <- S.param "proj_about"
 
           authorName      <- S.param "author_name"
           authorUri       <- S.param "author_uri"
 
-          verificationUri <- S.param "verificationUri"
+          verificationUri <- S.param "author_verify"
 
           ((_, fileinfo): _) <- S.files
 
@@ -75,8 +73,6 @@ startupPage db = do
           uri <- getServerUri db
           S.redirect $ LT.fromStrict uri
 
-runtimePage :: AcidState Database -> S.ScottyM ()
-runtimePage db = do
     S.get "" $ viewProj db "" ""
 
     S.get "/:project/" $ do
