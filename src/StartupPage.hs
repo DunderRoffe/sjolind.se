@@ -48,5 +48,5 @@ mainpageForm = do
             br
             label ! for "proj_about" $ text "Project about"
             br
-            textarea ! id "proj_about" ! name "proj_about"
+            textarea ! class_ "project-content" ! id "proj_about" ! name "proj_about"
                      ! placeholder "Markdown supported" $ return ()
