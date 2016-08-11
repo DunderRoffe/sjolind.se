@@ -3,13 +3,17 @@ module ArbitraryDatabase where
 import AbsDatabase
 import Test.QuickCheck
 
-import Data.Text as Text
-import Data.ByteString as ByteString
+import qualified Data.Text as Text
+import qualified Data.ByteString as ByteString
+import qualified Data.Map as Map
 
 instance Arbitrary Database where
     arbitrary = do
-        projMap <- arbitrary
-        return $ Database projMap
+        projMap       <- arbitrary
+        let main = head $ Map.keys projMap
+        author        <- arbitrary
+        verifications <- arbitrary
+        return $ Database main projMap author verifications
 
 instance Arbitrary Project where
     arbitrary = do
@@ -50,12 +54,12 @@ instance Arbitrary Author where
         aUri  <- arbitrary
         return $ Author aName aImg aUri
 
-instance Arbitrary Text where
+instance Arbitrary Text.Text where
     arbitrary = do
         str  <- arbitrary
         return $ Text.pack str
 
-instance Arbitrary ByteString where
+instance Arbitrary ByteString.ByteString where
     arbitrary = do
         str <- arbitrary
         return $ ByteString.pack str
