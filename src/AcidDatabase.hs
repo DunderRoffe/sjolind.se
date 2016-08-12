@@ -37,7 +37,7 @@ updateProject p@(Project name _ _ _ _) = do
 isEmpty :: Query Database Bool
 isEmpty = do
   (Database _ m _ _) <- ask
-  return (null m)
+  return (Map.null m)
 
 getProject :: Text -> Query Database (Maybe Project)
 getProject k = do
