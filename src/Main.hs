@@ -12,7 +12,7 @@ import qualified Web.Scotty.Cookie as SC
 import Data.Monoid (mconcat, mempty)
 import Data.Acid
 import Page
-import Constants
+import StartupPage
 import AbsDatabase
 import AcidDatabase
 
@@ -20,7 +20,7 @@ import Post
 import Project
 
 import Data.Maybe (fromMaybe)
-import Control.Monad (liftM, when)
+import Control.Monad (liftM, when, unless)
 import Control.Monad.IO.Class (liftIO)
 
 import Network.Wai.Middleware.Static
@@ -30,18 +30,50 @@ import Network.HTTP.Client
 import Network.HTTP.Client.TLS
 
 import Text.Blaze
-import Text.Blaze.Html.Renderer.Pretty (renderHtml)
 
 import qualified Data.Map as Map
 
 cookieName = "sjolind.se"
 main :: IO()
 main = do
-  db <- openLocalStateFrom "db/" newDB
+  db <- openLocalStateFrom "db/" emptyDb
   S.scotty 3000 $ do
     S.middleware $ staticPolicy (noDots >-> addBase "static")
 
-    S.get "" $ viewProj db "Main" ""
+    S.get "" $ do
+          e <- liftIO $ query db IsEmpty
+          unless e S.next
+          vs <- liftIO $ query db GetVerificationUris
+          (Author _ _ uri) <- liftIO $ query db GetAuthor
+          S.html $ renderCore vs uri renderStartupPage
+
+    S.post "" $ do
+          e <- liftIO $ query db IsEmpty
+          unless e S.next
+          projectName     <- S.param "proj_name"
+          projectAbout    <- S.param "proj_about"
+
+          authorName      <- S.param "author_name"
+          authorUri       <- S.param "author_uri"
+
+          verificationUri <- S.param "author_verify"
+
+          ((_, fileinfo): _) <- S.files
+
+          let filesMap  = Map.insert (fileName fileinfo) file Map.empty
+              file      = File (fileName fileinfo) (LBS.toStrict (fileContent fileinfo))
+              project   = Project projectName projectAbout Map.empty filesMap []
+              imgPath   = mconcat [projectName, "/file/", TE.decodeUtf8 (fileName fileinfo)]
+              author    = Author authorName imgPath authorUri
+
+          liftIO $ update db (UpdateProject project)
+          liftIO $ update db (UpdateAuthor author)
+          liftIO $ update db (UpdateMainProject projectName)
+          liftIO $ update db (UpdateVerificationUris [verificationUri])
+          uri <- getServerUri db
+          S.redirect $ LT.fromStrict uri
+
+    S.get "" $ viewProj db "" ""
 
     S.get "/:project/" $ do
           projName <- S.param "project"
@@ -69,14 +101,15 @@ main = do
     S.get "/auth" $
           flip S.rescue (\_ -> S.status badRequest400) $ do
             code <- S.param "code"
-            authenticated <- liftIO $ checkAuth $ LT.fromStrict code
+            uri <- getServerUri db
+            authenticated <- liftIO $ checkAuth code uri
             when authenticated $
               SC.setSimpleCookie cookieName code
-            S.redirect serverUri
-
+            S.redirect $ LT.fromStrict uri
 
     S.post "/:project/post" $ do
-          authenticated <- isAuthenticated
+          uri <- getServerUri db
+          authenticated <- isAuthenticated uri
           if authenticated
             then do
               projectName    <- S.param "project"
@@ -95,7 +128,7 @@ main = do
                   project'  = project {projectPostsMap = postsMap'}
 
               liftIO $ update db (UpdateProject project')
-              S.redirect serverUri
+              S.redirect $ LT.fromStrict uri
 
             `S.rescue` (\msg -> do
               S.status badRequest400
@@ -105,7 +138,8 @@ main = do
               S.status unauthorized401
 
     S.post "/:project/file/" $ do
-          authenticated <- isAuthenticated
+          uri <- getServerUri db
+          authenticated <- isAuthenticated uri
           if authenticated
             then do
               projectName        <- S.param "project"
@@ -118,7 +152,7 @@ main = do
 
               liftIO $ update db (UpdateProject project')
               liftIO $ print $ mconcat ["file ", fileName fileinfo, " added"]
-              S.redirect serverUri
+              S.redirect $ LT.fromStrict uri
 
             `S.rescue` (\msg -> do
               S.status badRequest400
@@ -126,36 +160,45 @@ main = do
             else
               S.status unauthorized401
 
-isAuthenticated :: S.ActionM Bool
-isAuthenticated = do
+getServerUri :: AcidState Database -> S.ActionM T.Text
+getServerUri db = do
+      (Author _ _ uri) <- liftIO $ query db GetAuthor
+      return uri
+
+isAuthenticated :: T.Text -> S.ActionM Bool
+isAuthenticated uri = do
   cookieCode <- liftM (fromMaybe "") $ SC.getCookie cookieName
-  authenticated <- liftIO $ checkAuth $ LT.fromStrict cookieCode
+  authenticated <- liftIO $ checkAuth cookieCode uri
   return True -- authenticated
 
 viewProj :: AcidState Database -> T.Text -> T.Text -> S.ActionM ()
+viewProj db "" _ = do
+     (Project n _ _ _ _) <- liftIO $ query db GetMainProject
+     viewProj db n ""
+
 viewProj db projName postHeading = do
   mproj <- liftIO $ query db (GetProject projName)
   mpost <- liftIO $ query db (GetPost projName postHeading)
+  uri <- getServerUri db
   case mproj of
-    Nothing   -> S.redirect serverUri
+    Nothing   -> S.redirect $ LT.fromStrict uri
     Just proj -> do
-      let renderedProject = renderProject mpost proj
       cookieCode <- liftM (fromMaybe "") $ SC.getCookie cookieName
       let authenticated = cookieCode /= ""
-      S.html $ LT.pack $ renderHtml $ renderCore renderedProject authenticated
+      vs  <- liftIO $ query db GetVerificationUris
+      S.html $ renderCore vs uri$ do
+        renderProject mpost proj
+        renderAdminBar authenticated uri
 
-checkAuth :: LT.Text -> IO Bool
-checkAuth ""   = return False
-checkAuth code = do
-  let clientId    = LT.unpack serverUri
-      redirectUri = mconcat [clientId, "/auth"]
+checkAuth :: T.Text -> T.Text -> IO Bool
+checkAuth "" _  = return False
+checkAuth code uri = do
   manager <- newManager tlsManagerSettings
+  initialRequest <- parseRequest (T.unpack (mconcat ["https://indieauth.com/auth"
+                                      , "?code=", code
+                                      , "&client_id=", uri
+                                      , "&redirect_uri=", uri, "/auth"]))
 
-  initialRequest <- parseUrl ("https://indieauth.com/auth"
-                              ++ "?code=" ++ LT.unpack code
-                              ++ "&client_id=" ++ clientId
-                              ++ "&redirect_uri=" ++ redirectUri)
   let request = initialRequest { method = "POST" }
-
   response <- httpLbs request manager
   return (statusCode (responseStatus response) == 200)

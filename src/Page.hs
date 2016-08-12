@@ -5,41 +5,47 @@ import Prelude hiding (head, div, id)
 import Data.Monoid (mconcat)
 import Control.Monad (when)
 
-import Data.Text.Lazy (toStrict)
-
-import Constants
+import Data.Text.Lazy (Text, toStrict, pack)
+import qualified Data.Text as Strict
 
 import Text.Blaze
 import Text.Blaze.Internal as B
 import Text.Blaze.Html5
 import Text.Blaze.Html5.Attributes hiding (title, form, label)
+import Text.Blaze.Html.Renderer.Pretty (renderHtml)
 
-renderCore :: Html -> Bool -> Html
-renderCore content authenticated =
-          docTypeHtml $ do
-            head $ do
-              title $ text $ toStrict serverUri
-              mapM_ (\url -> link ! href (textValue url) ! rel "me") melinks
-              link ! rel "stylesheet" ! type_ "text/css" ! href "/css/default.css"
-              link ! rel "stylesheet" ! type_ "text/css" ! href "/js/styles/default.css"
-              script ! src "/js/highlight.pack.js" $ return ()
-              script $ text "hljs.initHighlightingOnLoad();"
-            body $ do
-              div ! class_ "page-content" $ content
-              if authenticated
-                 then adminBar
-                 else signInForm
+renderCore :: [Strict.Text] -> Strict.Text -> Html -> Text
+renderCore verificationUris serverUri content = pack $ renderHtml $
+    docTypeHtml $ do
+      head $ do
+        title $ text serverUri
+        mapM_  linkVerificationUri verificationUris
+        link ! rel "stylesheet" ! type_ "text/css" ! href "/css/default.css"
+        link ! rel "stylesheet" ! type_ "text/css" ! href "/js/styles/default.css"
+        script ! src "/js/highlight.pack.js" $ return ()
+        script $ text "hljs.initHighlightingOnLoad();"
+      body $ div ! class_ "page-content" $ content
+
+linkVerificationUri :: Strict.Text -> Html
+linkVerificationUri uri =
+     link ! rel "me" ! href (textValue uri)
+
+renderAdminBar :: Bool -> Strict.Text -> Html
+renderAdminBar authenticated serverUri =
+    if authenticated
+       then adminBar
+       else signInForm serverUri
 
 adminBar :: Html
 adminBar = do
-  form ! action (textValue (toStrict serverUri)) ! method "post" $
+  form ! action "" ! method "post" $
     input ! type_ "submit" ! value "New"
-  form ! action (textValue (toStrict serverUri)) ! method "post" $
+  form ! action "" ! method "post" $
     input ! type_ "submit" ! value "Edit"
 
 newBlogPost :: Html
 newBlogPost =
-          form ! action (B.lazyTextValue serverUri) ! method "post" $ do
+          form ! action "" ! method "post" $ do
             div $ do
               label ! for "heading" $ text "Heading"
               input ! id "heading " ! name "heading" ! value ""
@@ -56,14 +62,14 @@ newBlogPost =
             div $
               input ! type_ "submit"
 
-signInForm :: Html
-signInForm =
+signInForm :: Strict.Text -> Html
+signInForm serverUri =
           form ! action "https://indieauth.com/auth" ! method "get" $ do
             label ! for "indie_auth_url" $ text "Web Address:"
             input ! id "indie_auth_url" ! type_ "text"
                   ! name "me" ! placeholder "yourdomain.com"
             button ! type_ "submit" $ text "Sign In"
             input ! type_ "hidden" ! name "client_id"
-                  ! value (B.lazyTextValue serverUri)
+                  ! value (textValue serverUri)
             input ! type_ "hidden" ! name "redirect_uri"
-                  ! value (B.lazyTextValue (mconcat [serverUri, "/auth"]))
+                  ! value (textValue (mconcat [serverUri, "/auth"]))

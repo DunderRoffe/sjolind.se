@@ -2,12 +2,12 @@
 module Post where
 
 import AbsDatabase
-import Constants hiding (authorName)
 
 import Prelude hiding (div, span, id)
 
 import Data.Default (def)
-import Data.Text.Lazy (fromStrict, toStrict)
+import Data.Text hiding (null, span)
+import Data.Text.Lazy (fromStrict)
 
 import Text.Markdown (markdown)
 import Text.Blaze
@@ -45,9 +45,9 @@ renderAuthor author =
     img ! class_ "u-photo" ! src (textValue (authorImage author)) ! alt "<author image>"
     span  ! class_ "p-name u-uri"  ! href (textValue (authorUri author)) $ text (authorName author)
 
-newPostForm :: Post -> Html
-newPostForm post =
-  form ! action (textValue (toStrict serverUri)) ! method "post" $ do
+newPostForm :: Text -> Post -> Html
+newPostForm serverUri post =
+  form ! action "" ! method "post" $ do
     let author = postAuthor post
     div $ do
       label ! for "author-name" $ text "Author Name"
