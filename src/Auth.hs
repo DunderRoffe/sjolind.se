@@ -21,7 +21,7 @@ checkAuth code uri = do
   initialRequest <- parseRequest (unpack (mconcat ["https://indieauth.com/auth"
                                       , "?code=", code
                                       , "&client_id=", uri
-                                      , "&redirect_uri=", uri, "/auth"]))
+                                      , "&redirect_uri=", uri, indieAuthRoute]))
 
   let request = initialRequest { method = "POST" }
   response <- httpLbs request manager
@@ -34,3 +34,6 @@ isAuthenticated uri = do
 
 getCookieName :: Text -> Text
 getCookieName uri = mconcat [uri, "_auth"]
+
+indieAuthRoute :: Text
+indieAuthRoute = "/auth"
