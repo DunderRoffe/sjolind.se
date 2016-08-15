@@ -6,6 +6,7 @@ import qualified Data.Map as Map
 import qualified Data.ByteString.Lazy as LBS (fromStrict, toStrict)
 import qualified Data.Text.Lazy as LT (fromStrict)
 import Data.Acid
+import Data.Monoid (mconcat)
 
 import AbsDatabase
 import AcidDatabase

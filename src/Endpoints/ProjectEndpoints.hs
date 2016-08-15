@@ -8,6 +8,7 @@ import qualified Data.Text.Lazy as LT (fromStrict)
 import qualified Data.Text.Encoding as TE (encodeUtf8, decodeUtf8)
 import qualified Data.ByteString.Lazy as LBS (fromStrict, toStrict)
 import qualified Data.Map as Map
+import Data.Monoid
 
 import Pages.Core
 import Pages.ProjectPage
@@ -97,7 +98,6 @@ presentProject db "" _ = do
     presentProject db n ""
 
 presentProject db projName postHeading = do
-    liftIO $ print "LEL"
     mproj <- liftIO $ query db (GetProject projName)
     mpost <- liftIO $ query db (GetPost projName postHeading)
     uri <- getServerUri db

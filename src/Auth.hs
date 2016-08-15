@@ -5,6 +5,7 @@ import Network.HTTP.Types
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
 
+import Data.Monoid (mconcat)
 import Data.Text
 import Data.Maybe (fromMaybe)
 

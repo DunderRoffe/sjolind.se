@@ -30,9 +30,7 @@ endpoints db = do
          initDB db
 
     -- Project
-    get  "" $ do
-         liftIO $ print "lel"
-         presentProject db "" ""
+    get  "" $ presentProject db "" ""
     get  "/:project/" $ do
          projName <- param "project"
          presentProject db projName ""
