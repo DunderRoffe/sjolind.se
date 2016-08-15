@@ -74,7 +74,7 @@ getAuthor = do
 
 updateMainProject :: Text -> Update Database ()
 updateMainProject newMain = do
-    (Database s m a v) <- get
+    (Database _ m a v) <- get
     case Map.lookup newMain m of
         Nothing -> error $ "Trying to set main project to nonexisting project: " ++ show newMain
         _       -> put (Database newMain m a v)

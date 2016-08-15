@@ -37,3 +37,9 @@ getCookieName uri = mconcat [uri, "_auth"]
 
 indieAuthRoute :: Text
 indieAuthRoute = "/auth"
+
+ifAuthenticated :: Text -> S.ActionM () -> S.ActionM ()
+ifAuthenticated uri task = do
+    authenticated <- isAuthenticated uri
+    if authenticated then task
+                     else S.status unauthorized401

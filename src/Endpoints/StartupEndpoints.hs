@@ -16,24 +16,14 @@ import Pages.StartupPage
 
 import qualified Web.Scotty as S
 
-import Control.Monad.IO.Class (liftIO, MonadIO)
-import Control.Monad (liftM, when, unless)
-
 import Network.Wai.Parse
+import Control.Monad.IO.Class (liftIO)
 
-startupEndpoints :: AcidState Database -> S.ScottyM ()
-startupEndpoints db = do
+presentStartupPage :: S.ActionM ()
+presentStartupPage = S.html $ renderCore [] "" renderStartupPage
 
-    S.get "" $ do
-          e <- liftIO $ query db IsEmpty
-          unless e S.next
-          vs <- liftIO $ query db GetVerificationUris
-          (Author _ _ uri) <- liftIO $ query db GetAuthor
-          S.html $ renderCore vs uri renderStartupPage
-
-    S.post "" $ do
-          e <- liftIO $ query db IsEmpty
-          unless e S.next
+initDB :: AcidState Database -> S.ActionM ()
+initDB db = do
           projectName     <- S.param "proj_name"
           projectAbout    <- S.param "proj_about"
 
@@ -54,6 +44,6 @@ startupEndpoints db = do
           liftIO $ update db (UpdateAuthor author)
           liftIO $ update db (UpdateMainProject projectName)
           liftIO $ update db (UpdateVerificationUris [verificationUri])
+
           uri <- getServerUri db
           S.redirect $ LT.fromStrict uri
-

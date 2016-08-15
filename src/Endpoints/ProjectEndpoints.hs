@@ -25,92 +25,79 @@ import Control.Monad (liftM, when, unless)
 import qualified Web.Scotty as S
 import qualified Web.Scotty.Cookie as SC
 
-projectEndpoints :: AcidState Database -> S.ScottyM ()
-projectEndpoints db = do 
-    S.get "" $ viewProj db "" ""
+getProjectFile :: AcidState Database -> S.ActionM ()
+getProjectFile db = do
+    projName    <- S.param "project"
+    filename    <- S.param "filename"
+    mproj <- liftIO $ query db (GetProject projName)
+    case mproj of
+      Nothing      -> S.status badRequest400
+      Just project -> do
+        let fm = projectFilesMap project
+        case Map.lookup filename fm of
+          Nothing                -> S.status badRequest400
+          Just (File _ fileData) -> do
+            S.setHeader "Content-Disposition" $ LT.fromStrict $TE.decodeUtf8 filename
+            S.raw $ LBS.fromStrict fileData
 
-    S.get "/:project/" $ do
-          projName <- S.param "project"
-          viewProj db projName ""
 
-    S.get "/:project/:post" $ do
-          projName    <- S.param "project"
-          postHeading <- S.param "post"
-          viewProj db projName postHeading
+updateProjectFile :: AcidState Database -> S.ActionM ()
+updateProjectFile db = do
+    uri <- getServerUri db
+    authenticated <- isAuthenticated uri
+    if authenticated
+      then do
+        projectName        <- S.param "project"
+        (Just project)     <- liftIO $ query db (GetProject projectName)
+        ((_, fileinfo): _) <- S.files
 
-    S.get "/:project/file/:filename" $ do
-          projName    <- S.param "project"
-          filename    <- S.param "filename"
-          mproj <- liftIO $ query db (GetProject projName)
-          case mproj of
-            Nothing      -> S.status badRequest400
-            Just project -> do
-              let fm = projectFilesMap project
-              case Map.lookup filename fm of
-                Nothing                -> S.status badRequest400
-                Just (File _ fileData) -> do
-                  S.setHeader "Content-Disposition" $ LT.fromStrict $TE.decodeUtf8 filename
-                  S.raw $ LBS.fromStrict fileData
+        let filesMap' = Map.insert (fileName fileinfo) file (projectFilesMap project)
+            file      = File (fileName fileinfo) (LBS.toStrict (fileContent fileinfo))
+            project'  = project {projectFilesMap = filesMap'}
 
-    S.post "/:project/post" $ do
-          uri <- getServerUri db
-          authenticated <- isAuthenticated uri
-          if authenticated
-            then do
-              projectName    <- S.param "project"
-              (Just project) <- liftIO $ query db (GetProject projectName)
-              contentType    <- S.header "Content-Type"
-              authorName     <- S.param "author-name"
-              authorImage    <- S.param "author-image"
-              authorUri      <- S.param "author-uri"
-              heading        <- S.param "heading"
-              date           <- S.param "date"
-              content        <- S.param "content"
+        liftIO $ update db (UpdateProject project')
+        liftIO $ print $ mconcat ["file ", fileName fileinfo, " added"]
+        S.redirect $ LT.fromStrict uri
 
-              let author    = Author authorName authorImage authorUri
-                  post      = Post author heading date content []
-                  postsMap' = Map.insert heading post (projectPostsMap project)
-                  project'  = project {projectPostsMap = postsMap'}
+      `S.rescue` (\msg -> do
+        S.status badRequest400
+        S.text msg)
+      else
+        S.status unauthorized401
 
-              liftIO $ update db (UpdateProject project')
-              S.redirect $ LT.fromStrict uri
+updateProjectPost :: AcidState Database -> S.ActionM ()
+updateProjectPost db =
+      do
+        projectName    <- S.param "project"
+        (Just project) <- liftIO $ query db (GetProject projectName)
+        contentType    <- S.header "Content-Type"
+        authorName     <- S.param "author-name"
+        authorImage    <- S.param "author-image"
+        authorUri      <- S.param "author-uri"
+        heading        <- S.param "heading"
+        date           <- S.param "date"
+        content        <- S.param "content"
 
-            `S.rescue` (\msg -> do
-              S.status badRequest400
-              S.text msg)
+        let author    = Author authorName authorImage authorUri
+            post      = Post author heading date content []
+            postsMap' = Map.insert heading post (projectPostsMap project)
+            project'  = project {projectPostsMap = postsMap'}
 
-            else
-              S.status unauthorized401
+        liftIO $ update db (UpdateProject project')
+        uri <- getServerUri db
+        S.redirect $ LT.fromStrict uri
 
-    S.post "/:project/file/" $ do
-          uri <- getServerUri db
-          authenticated <- isAuthenticated uri
-          if authenticated
-            then do
-              projectName        <- S.param "project"
-              (Just project)     <- liftIO $ query db (GetProject projectName)
-              ((_, fileinfo): _) <- S.files
+      `S.rescue` (\msg -> do
+        S.status badRequest400
+        S.text msg)
 
-              let filesMap' = Map.insert (fileName fileinfo) file (projectFilesMap project)
-                  file      = File (fileName fileinfo) (LBS.toStrict (fileContent fileinfo))
-                  project'  = project {projectFilesMap = filesMap'}
-
-              liftIO $ update db (UpdateProject project')
-              liftIO $ print $ mconcat ["file ", fileName fileinfo, " added"]
-              S.redirect $ LT.fromStrict uri
-
-            `S.rescue` (\msg -> do
-              S.status badRequest400
-              S.text msg)
-            else
-              S.status unauthorized401
-
-viewProj :: AcidState Database -> Text -> Text -> S.ActionM ()
-viewProj db "" _ = do
+presentProject :: AcidState Database -> Text -> Text -> S.ActionM ()
+presentProject db "" _ = do
     (Project n _ _ _ _) <- liftIO $ query db GetMainProject
-    viewProj db n ""
+    presentProject db n ""
 
-viewProj db projName postHeading = do
+presentProject db projName postHeading = do
+    liftIO $ print "LEL"
     mproj <- liftIO $ query db (GetProject projName)
     mpost <- liftIO $ query db (GetPost projName postHeading)
     uri <- getServerUri db
