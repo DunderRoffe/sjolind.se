@@ -10,8 +10,9 @@ import Data.Acid
 import AbsDatabase
 import AcidDatabase
 import CommonScotty
-import StartupPage
-import Page
+
+import Pages.Core
+import Pages.StartupPage
 
 import qualified Web.Scotty as S
 

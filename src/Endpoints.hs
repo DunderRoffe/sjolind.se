@@ -6,13 +6,10 @@ import qualified Data.Text.Lazy as LT (fromStrict)
 import qualified Web.Scotty as S
 import qualified Web.Scotty.Cookie as SC
 import Data.Acid
-import Page
 import AbsDatabase
 import AcidDatabase
 import Auth
 import CommonScotty
-
-import Post
 
 import Endpoints.ProjectEndpoints
 import Endpoints.StartupEndpoints

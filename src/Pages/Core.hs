@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Page where
+module Pages.Core where
 
 import Prelude hiding (head, div, id)
 import Data.Monoid (mconcat)

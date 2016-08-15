@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings  #-}
-module Project where
+module Pages.ProjectPage where
 
-import Post
+import Pages.PostPage
 import AbsDatabase
 
 import Data.Monoid (mconcat)

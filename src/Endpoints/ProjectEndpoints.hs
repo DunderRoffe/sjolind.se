@@ -9,8 +9,8 @@ import qualified Data.Text.Encoding as TE (encodeUtf8, decodeUtf8)
 import qualified Data.ByteString.Lazy as LBS (fromStrict, toStrict)
 import qualified Data.Map as Map
 
-import Page
-import Project
+import Pages.Core
+import Pages.ProjectPage
 import Auth
 import AcidDatabase
 import AbsDatabase

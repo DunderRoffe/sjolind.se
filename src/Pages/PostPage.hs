@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings  #-}
-module Post where
+module Pages.PostPage where
 
 import AbsDatabase
 
