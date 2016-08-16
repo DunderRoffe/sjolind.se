@@ -1,16 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import Data.Text
-
-import Web.Scotty
-import Data.Monoid (mconcat, mempty)
 import Data.Acid
+import Web.Scotty
+import Network.Wai.Middleware.Static
+
 import AbsDatabase
 import AcidDatabase
 import Endpoints
-
-import Network.Wai.Middleware.Static
 
 main :: IO()
 main = do

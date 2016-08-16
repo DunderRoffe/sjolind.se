@@ -9,8 +9,8 @@ import Data.Monoid (mconcat)
 import Data.Text
 import Data.Maybe (fromMaybe)
 
-import Control.Monad.IO.Class (liftIO, MonadIO)
-import Control.Monad (liftM, when, unless)
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad (liftM)
 
 import qualified Web.Scotty as S
 import qualified Web.Scotty.Cookie as SC

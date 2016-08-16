@@ -3,13 +3,11 @@ module Pages.Core where
 
 import Prelude hiding (head, div, id)
 import Data.Monoid (mconcat)
-import Control.Monad (when)
 
 import Data.Text.Lazy (Text, toStrict, pack)
 import qualified Data.Text as Strict
 
 import Text.Blaze
-import Text.Blaze.Internal as B
 import Text.Blaze.Html5
 import Text.Blaze.Html5.Attributes hiding (title, form, label)
 import Text.Blaze.Html.Renderer.Pretty (renderHtml)

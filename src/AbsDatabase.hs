@@ -4,9 +4,7 @@ module AbsDatabase where
 
 import Data.Typeable
 import Data.Text (Text)
-import Data.Text.Lazy (toStrict)
 import Data.Map.Strict
-import Text.Blaze
 import Data.ByteString (ByteString)
 
 type Verification = Text
