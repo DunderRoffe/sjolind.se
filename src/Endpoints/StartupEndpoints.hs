@@ -10,7 +10,7 @@ import Data.Monoid (mconcat)
 
 import AbsDatabase
 import AcidDatabase
-import CommonScotty
+import Endpoints.Common
 
 import Pages.Core
 import Pages.StartupPage

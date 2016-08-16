@@ -15,7 +15,7 @@ import Pages.ProjectPage
 import Auth
 import AcidDatabase
 import AbsDatabase
-import CommonScotty
+import Endpoints.Common
 
 import Network.HTTP.Types
 import Network.Wai.Parse

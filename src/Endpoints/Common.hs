@@ -1,4 +1,4 @@
-module CommonScotty where
+module Endpoints.Common where
 
 import Data.Text
 import Data.Acid

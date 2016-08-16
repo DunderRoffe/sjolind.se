@@ -8,8 +8,8 @@ import Data.Text
 import AbsDatabase
 import AcidDatabase
 import Auth
-import CommonScotty
 
+import Endpoints.Common
 import Endpoints.ProjectEndpoints
 import Endpoints.AuthEndpoints
 import Endpoints.StartupEndpoints

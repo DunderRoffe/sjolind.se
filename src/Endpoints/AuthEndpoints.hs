@@ -5,7 +5,6 @@ import qualified Data.Text.Lazy as LT (fromStrict)
 import Data.Text
 
 import Auth
-import CommonScotty
 
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad (when)
