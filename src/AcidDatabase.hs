@@ -7,7 +7,6 @@ module AcidDatabase where
 import Data.Acid
 import Data.Acid.Advanced
 import Data.Text (Text)
-import Data.Serialize.Get (runGet)
 import Data.Typeable
 import Data.Maybe
 import qualified Data.Map.Strict as Map
@@ -15,8 +14,6 @@ import qualified Data.Map.Strict as Map
 import Data.SafeCopy
 import System.Environment
 
-import Control.Lens (makeLenses)
-import Control.Applicative
 import Control.Monad.Reader
 import Control.Monad.State
 
@@ -74,7 +71,7 @@ getAuthor = do
 
 updateMainProject :: Text -> Update Database ()
 updateMainProject newMain = do
-    (Database s m a v) <- get
+    (Database _ m a v) <- get
     case Map.lookup newMain m of
         Nothing -> error $ "Trying to set main project to nonexisting project: " ++ show newMain
         _       -> put (Database newMain m a v)
