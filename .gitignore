@@ -4,3 +4,5 @@ secretFile
 *.swo
 *.swp
 *.o
+.cabal-sandbox
+cabal.sandbox.config
