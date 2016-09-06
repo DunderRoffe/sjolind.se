@@ -14,8 +14,12 @@ import Endpoints.ProjectEndpoints
 import Endpoints.AuthEndpoints
 import Endpoints.StartupEndpoints
 
+import Webmentions
+
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad (unless)
+
+import Network.HTTP.Types
 
 endpoints :: AcidState Database -> ScottyM ()
 endpoints db = do
@@ -30,6 +34,14 @@ endpoints db = do
          e <- liftIO $ query db IsEmpty
          if e then initDB db
               else next
+
+    -- Webmentions
+    post "webmentions" $ do
+         source <- param "source"
+         target <- param "target"
+
+         liftIO $ processWebmentionAsync (source, target) db
+         status accepted202
 
     -- Project -- Present and update projects
     get  "" $ presentProject db "" ""
