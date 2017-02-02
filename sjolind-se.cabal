@@ -27,6 +27,7 @@ executable sjolind-se
         lens,
         cereal,
         mtl,
+        microformats2-parser,
         transformers,
         safecopy,
         http-types,
